@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Googi Gluten Check</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1418;
+    --panel: #1a2128;
+    --panel-2: #222b33;
+    --border: #2e3944;
+    --text: #eef2f5;
+    --text-dim: #9aa7b2;
+    --accent: #4f9dde;
+
+    --red-bg: #3a1414;
+    --red-border: #c0392b;
+    --red-text: #ff8a80;
+
+    --green-bg: #10271a;
+    --green-border: #2ecc71;
+    --green-text: #7ee8a8;
+
+    --yellow-bg: #332a0d;
+    --yellow-border: #e0b93a;
+    --yellow-text: #ffd766;
+
+    --gray-bg: #23282d;
+    --gray-border: #5a6570;
+    --gray-text: #c3ccd3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  #reader {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .scan-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+
+  button:active { opacity: 0.75; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #08131c;
+    flex: 1;
+  }
+
+  .btn-secondary {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    flex: 1;
+  }
+
+  .manual-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .manual-row input {
+    flex: 1;
+    font-size: 1rem;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+  }
+
+  .manual-row input:focus {
+    outline: 2px solid var(--accent);
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  #result { display: none; }
+
+  .verdict-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1.5px solid;
+    margin-bottom: 14px;
+  }
+
+  .verdict-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .verdict-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 2px 0;
+  }
+
+  .verdict-sub {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .verdict-red { background: var(--red-bg); border-color: var(--red-border); color: var(--red-text); }
+  .verdict-green { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
+  .verdict-yellow { background: var(--yellow-bg); border-color: var(--yellow-border); color: var(--yellow-text); }
+  .verdict-gray { background: var(--gray-bg); border-color: var(--gray-border); color: var(--gray-text); }
+
+  .product-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .product-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .product-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin: 0 0 2px 0;
+  }
+
+  .product-brand {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin: 0;
+  }
+
+  .flag-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px 0;
+  }
+
+  .flag-list li {
+    font-size: 0.88rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--panel-2);
+    margin-bottom: 6px;
+    border-left: 3px solid var(--border);
+  }
+
+  .flag-red { border-left-color: var(--red-border); }
+  .flag-yellow { border-left-color: var(--yellow-border); }
+  .flag-green { border-left-color: var(--green-border); }
+
+  .ingredients-box {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-dim);
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .ingredients-box mark {
+    background: rgba(224, 185, 58, 0.35);
+    color: var(--text);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  .ingredients-box mark.mark-red {
+    background: rgba(192, 57, 43, 0.45);
+  }
+
+  .disclaimer {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 12px;
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
+  #status {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 1.2em;
+    margin-top: 8px;
+  }
+
+  #status.error { color: var(--red-text); }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-align: center;
+    max-width: 480px;
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+
+  .made-by {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+  }
+
+  .made-by-line {
+    height: 1px;
+    width: 28px;
+    background: linear-gradient(90deg, transparent, var(--border));
+  }
+
+  .made-by-line.flip {
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .made-by-text {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: linear-gradient(90deg, #4f9dde, #7ee8a8, #ffd766);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 6s linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 Googi Gluten Check</h1>
+  <p>Hi Goog, here's an app you can use to scan the barcode of something and see if it has any gluten in it 💛</p>
+</header>
+
+<div class="card">
+  <div class="section-label">Scan</div>
+  <div id="reader"></div>
+  <div class="scan-controls">
+    <button class="btn-primary" id="startBtn">Start Camera</button>
+    <button class="btn-secondary" id="stopBtn" style="display:none;">Stop</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div class="card">
+  <div class="section-label">Or enter barcode manually</div>
+  <div class="manual-row">
+    <input type="text" inputmode="numeric" id="manualInput" placeholder="e.g. 0511111019693" />
+    <button class="btn-primary" id="manualBtn" style="flex:0;">Check</button>
+  </div>
+</div>
+
+<div class="card" id="result">
+  <div class="product-header" id="productHeader"></div>
+  <div class="verdict-badge" id="verdictBadge">
+    <div class="verdict-icon" id="verdictIcon"></div>
+    <div>
+      <p class="verdict-title" id="verdictTitle"></p>
+      <p class="verdict-sub" id="verdictSub"></p>
+    </div>
+  </div>
+  <ul class="flag-list" id="flagList"></ul>
+  <div class="section-label">Full ingredient list</div>
+  <div class="ingredients-box" id="ingredientsBox"></div>
+  <div class="disclaimer">
+    ⚠️ This app cross-references community-maintained ingredient data (Open Food Facts) against a keyword list of gluten-containing ingredients. It can miss mislabeled products, regional formulation differences, and manufacturing changes. It is <strong>not</strong> a substitute for reading the physical label yourself, especially for products flagged yellow or gray. When in doubt, don't eat it.
+  </div>
+</div>
+
+<div class="made-by">
+  <span class="made-by-line"></span>
+  <span class="made-by-text">🌟 Made with love by Pedro Nemalceff 🌟</span>
+  <span class="made-by-line flip"></span>
+</div>
+
+<footer>
+  Data © <a href="https://world.openfoodfacts.org" style="color: var(--text-dim);">Open Food Facts</a> contributors, ODbL license.
+</footer>
+
+<script>
+// ---------------------------------------------------------------------------
+// Gluten keyword lists
+// ---------------------------------------------------------------------------
+
+// Ingredients that definitively indicate gluten, if present in any form.
+// Matched as whole words / word-stems with boundaries to reduce false hits.
+const DEFINITE_GLUTEN = [
+  "wheat", "wheatgerm", "wheat germ", "wheat bran", "wheat starch", "wheat flour",
+  "wheat protein", "hydrolyzed wheat protein", "vital wheat gluten", "gluten",
+  "barley", "barley malt", "malt extract", "malt flavoring", "malt flavouring",
+  "malt vinegar", "malted barley", "malted milk",
+  "rye", "triticale", "spelt", "kamut", "farro", "emmer", "einkorn",
+  "durum", "durum wheat", "semolina", "farina", "graham flour", "graham",
+  "bulgur", "couscous", "seitan", "brewer's yeast", "brewers yeast",
+  "matzo", "matzoh", "panko"
+];
+
+// Ingredients that MAY come from a gluten source depending on processing /
+// region, or that are commonly a source of confusion. Flagged yellow, not red.
+const AMBIGUOUS_GLUTEN = [
+  "maltodextrin", "dextrin", "caramel color", "caramel colour",
+  "modified food starch", "modified starch", "natural flavor", "natural flavoring",
+  "natural flavour", "natural flavouring", "artificial flavor", "flavoring",
+  "flavouring", "glucose syrup", "soy sauce", "vegetable protein",
+  "hydrolyzed vegetable protein", "yeast extract"
+];
+// Note: plain "starch" is intentionally excluded — corn starch, potato starch,
+// and tapioca starch (all common and gluten-free) would otherwise trigger a
+// noisy false flag. Only unspecified "modified starch" is treated as ambiguous.
+
+// Oats are naturally gluten-free but very commonly cross-contaminated during
+// growing/milling unless specifically certified. Handled as its own case.
+const OATS_TERMS = ["oat", "oats", "oat flour", "oat bran", "whole oats"];
+
+function buildRegex(terms) {
+  // longest first so multi-word phrases match before their substrings
+  const sorted = [...terms].sort((a, b) => b.length - a.length);
+  const escaped = sorted.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp("(" + escaped.join("|") + ")", "gi");
+}
+
+const definiteRegex = buildRegex(DEFINITE_GLUTEN);
+const ambiguousRegex = buildRegex(AMBIGUOUS_GLUTEN);
+const oatsRegex = buildRegex(OATS_TERMS);
+
+// ---------------------------------------------------------------------------
+// Verdict engine
+// ---------------------------------------------------------------------------
+
+const VERDICT = {
+  CERTIFIED_GF: "certified_gf",
+  CONTAINS_DECLARED: "contains_declared",
+  TRACES: "traces",
+  CONTAINS_INGREDIENT: "contains_ingredient",
+  OATS_CAUTION: "oats_caution",
+  AMBIGUOUS: "ambiguous",
+  LIKELY_GF_UNVERIFIED: "likely_gf_unverified",
+  NO_DATA: "no_data",
+  NOT_FOUND: "not_found"
+};
+
+function analyzeProduct(product) {
+  const labels = (product.labels_tags || []).map(s => s.toLowerCase());
+  const allergens = (product.allergens_tags || []).map(s => s.toLowerCase());
+  const traces = (product.traces_tags || []).map(s => s.toLowerCase());
+  const ingredientsText = product.ingredients_text || product.ingredients_text_en || "";
+
+  const flags = [];
+
+  // 1. Certified gluten-free label takes priority
+  const hasGFLabel = labels.some(l => l.includes("gluten-free") || l.includes("sans-gluten") || l.includes("gluten_free"));
+  if (hasGFLabel) {
+    flags.push({ level: "green", text: "Labeled \"Gluten-Free\" by manufacturer/certifier in product database." });
+  }
+
+  // 2. Declared allergen
+  const hasAllergenGluten = allergens.some(a => a.includes("gluten"));
+  if (hasAllergenGluten) {
+    flags.push({ level: "red", text: "Manufacturer-declared allergen: contains gluten." });
+  }
+
+  // 3. Traces / cross-contamination warning
+  const hasTracesGluten = traces.some(t => t.includes("gluten") || t.includes("wheat"));
+  if (hasTracesGluten) {
+    flags.push({ level: "yellow", text: "Manufacturer warning: may contain traces of gluten/wheat (cross-contamination)." });
+  }
+
+  // 4. Ingredient text scan
+  let definiteMatches = [];
+  let ambiguousMatches = [];
+  let oatsMatches = [];
+  if (ingredientsText) {
+    definiteMatches = [...new Set((ingredientsText.match(definiteRegex) || []).map(m => m.toLowerCase()))];
+    ambiguousMatches = [...new Set((ingredientsText.match(ambiguousRegex) || []).map(m => m.toLowerCase()))];
+    oatsMatches = [...new Set((ingredientsText.match(oatsRegex) || []).map(m => m.toLowerCase()))];
+  }
+
+  if (definiteMatches.length > 0) {
+    flags.push({ level: "red", text: `Gluten-containing ingredient(s) found in ingredient list: ${definiteMatches.join(", ")}.` });
+  }
+  if (oatsMatches.length > 0 && !hasGFLabel) {
+    flags.push({ level: "yellow", text: `Contains oats (${oatsMatches.join(", ")}) — oats are naturally gluten-free but frequently cross-contaminated unless certified gluten-free oats.` });
+  }
+  if (ambiguousMatches.length > 0) {
+    flags.push({ level: "yellow", text: `Ambiguous ingredient(s) present that can sometimes derive from gluten sources: ${ambiguousMatches.join(", ")}. Verify with manufacturer if uncertain.` });
+  }
+
+  // Determine overall verdict, prioritizing the most cautious/serious signal
+  let verdict;
+  if (hasAllergenGluten || definiteMatches.length > 0) {
+    verdict = VERDICT.CONTAINS_INGREDIENT;
+  } else if (hasGFLabel) {
+    verdict = VERDICT.CERTIFIED_GF;
+  } else if (hasTracesGluten) {
+    verdict = VERDICT.TRACES;
+  } else if (oatsMatches.length > 0) {
+    verdict = VERDICT.OATS_CAUTION;
+  } else if (ambiguousMatches.length > 0) {
+    verdict = VERDICT.AMBIGUOUS;
+  } else if (ingredientsText) {
+    verdict = VERDICT.LIKELY_GF_UNVERIFIED;
+    flags.push({ level: "green", text: "No gluten-related keywords detected in the ingredient list on file." });
+  } else {
+    verdict = VERDICT.NO_DATA;
+    flags.push({ level: "gray", text: "No ingredient list available in the database for this product." });
+  }
+
+  return { verdict, flags, ingredientsText, definiteMatches, ambiguousMatches, oatsMatches };
+}
+
+const VERDICT_DISPLAY = {
+  certified_gf: {
+    cls: "green", icon: "✅",
+    title: "Certified Gluten-Free",
+    sub: "Labeled gluten-free by the manufacturer or a certifier."
+  },
+  contains_ingredient: {
+    cls: "red", icon: "⛔",
+    title: "Contains Gluten",
+    sub: "Gluten declared or detected in the ingredient list."
+  },
+  traces: {
+    cls: "yellow", icon: "⚠️",
+    title: "May Contain Traces",
+    sub: "Cross-contamination warning on file — use judgment."
+  },
+  oats_caution: {
+    cls: "yellow", icon: "⚠️",
+    title: "Contains Oats — Verify Certification",
+    sub: "Oats are gluten-free but often cross-contaminated unless certified."
+  },
+  ambiguous: {
+    cls: "yellow", icon: "❓",
+    title: "Ambiguous Ingredients Present",
+    sub: "Some ingredients could derive from gluten sources — verify."
+  },
+  likely_gf_unverified: {
+    cls: "yellow", icon: "🟡",
+    title: "No Gluten Ingredients Detected (Unverified)",
+    sub: "Nothing flagged, but this product isn't certified gluten-free. Check the label."
+  },
+  no_data: {
+    cls: "gray", icon: "❔",
+    title: "Not Enough Data",
+    sub: "This product has no ingredient list on file. Check the label directly."
+  },
+  not_found: {
+    cls: "gray", icon: "❔",
+    title: "Product Not Found",
+    sub: "This barcode isn't in the Open Food Facts database yet."
+  }
+};
+
+function highlightIngredients(text) {
+  if (!text) return "<em>No ingredient text available.</em>";
+  let html = text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  html = html.replace(definiteRegex, m => `<mark class="mark-red">${m}</mark>`);
+  html = html.replace(ambiguousRegex, m => `<mark>${m}</mark>`);
+  html = html.replace(oatsRegex, m => `<mark>${m}</mark>`);
+  return html;
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+function renderResult(product, analysis, notFound) {
+  const resultEl = document.getElementById("result");
+  const headerEl = document.getElementById("productHeader");
+  const badgeEl = document.getElementById("verdictBadge");
+  const iconEl = document.getElementById("verdictIcon");
+  const titleEl = document.getElementById("verdictTitle");
+  const subEl = document.getElementById("verdictSub");
+  const flagListEl = document.getElementById("flagList");
+  const ingredientsEl = document.getElementById("ingredientsBox");
+
+  const verdictKey = notFound ? "not_found" : analysis.verdict;
+  const display = VERDICT_DISPLAY[verdictKey];
+
+  if (notFound) {
+    headerEl.innerHTML = "";
+    flagListEl.innerHTML = "";
+    ingredientsEl.innerHTML = "<em>N/A</em>";
+  } else {
+    const name = product.product_name || "Unnamed product";
+    const brand = product.brands || "";
+    const img = product.image_front_url || product.image_url || "";
+    headerEl.innerHTML = `
+      ${img ? `<img class="product-img" src="${img}" alt="">` : `<div class="product-img"></div>`}
+      <div>
+        <p class="product-name">${name}</p>
+        <p class="product-brand">${brand}</p>
+      </div>
+    `;
+    flagListEl.innerHTML = analysis.flags.map(f => `<li class="flag-${f.level}">${f.text}</li>`).join("");
+    ingredientsEl.innerHTML = highlightIngredients(analysis.ingredientsText);
+  }
+
+  badgeEl.className = "verdict-badge verdict-" + display.cls;
+  iconEl.textContent = display.icon;
+  titleEl.textContent = display.title;
+  subEl.textContent = display.sub;
+
+  resultEl.style.display = "block";
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---------------------------------------------------------------------------
+// Open Food Facts lookup
+// ---------------------------------------------------------------------------
+
+async function lookupBarcode(barcode) {
+  const statusEl = document.getElementById("status");
+  statusEl.className = "";
+  statusEl.innerHTML = `<span class="spinner"></span> Looking up ${barcode}…`;
+
+  try {
+    const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,brands,ingredients_text,ingredients_text_en,allergens_tags,labels_tags,traces_tags,image_front_url,image_url`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.status !== 1 || !data.product) {
+      statusEl.textContent = "Product not found in database.";
+      renderResult(null, null, true);
+      return;
+    }
+
+    const product = data.product;
+    const analysis = analyzeProduct(product);
+    statusEl.textContent = `Found: ${product.product_name || barcode}`;
+    renderResult(product, analysis, false);
+  } catch (err) {
+    statusEl.className = "error";
+    statusEl.textContent = "Lookup failed — check your connection and try again.";
+    console.error(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Scanner wiring
+// ---------------------------------------------------------------------------
+
+let html5QrCode = null;
+let scanning = false;
+
+async function startScanning() {
+  const statusEl = document.getElementById("status");
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+
+  if (!window.isSecureContext) {
+    statusEl.className = "error";
+    statusEl.textContent = "Camera requires HTTPS. Open this page via a secure (https://) URL, or use manual entry below.";
+    return;
+  }
+
+  try {
+    html5QrCode = new Html5Qrcode("reader", {
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128
+      ],
+      verbose: false
+    });
+
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 260, height: 160 } },
+      (decodedText) => {
+        // On successful scan
+        lookupBarcode(decodedText.trim());
+        stopScanning();
+      },
+      () => { /* per-frame decode failure, ignore */ }
+    );
+
+    scanning = true;
+    startBtn.style.display = "none";
+    stopBtn.style.display = "block";
+    statusEl.className = "";
+    statusEl.textContent = "Point your camera at a barcode…";
+  } catch (err) {
+    statusEl.className = "error";
+    statusEl.textContent = "Couldn't access camera: " + (err.message || err);
+    console.error(err);
+  }
+}
+
+async function stopScanning() {
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  if (html5QrCode && scanning) {
+    try {
+      await html5QrCode.stop();
+      html5QrCode.clear();
+    } catch (e) { /* ignore */ }
+  }
+  scanning = false;
+  startBtn.style.display = "block";
+  stopBtn.style.display = "none";
+}
+
+document.getElementById("startBtn").addEventListener("click", startScanning);
+document.getElementById("stopBtn").addEventListener("click", stopScanning);
+
+document.getElementById("manualBtn").addEventListener("click", () => {
+  const val = document.getElementById("manualInput").value.trim();
+  if (val) lookupBarcode(val);
+});
+document.getElementById("manualInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("manualBtn").click();
+});
+</script>
+
+</body>
+</html>
